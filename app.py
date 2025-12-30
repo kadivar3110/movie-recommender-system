@@ -358,6 +358,14 @@ if st.session_state.page == 'review':
                     
             else:
                 st.info("No reviews found for this movie.")
+            
+            # Back button at the end of review page
+            st.markdown("---")
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col2:
+                if st.button("⬅️ Back to Home", use_container_width=True, key="back_btn_end"):
+                    st.session_state.page = 'home'
+                    st.rerun()
 
         except Exception as e:
             st.error(f"Error loading movie details: {e}")
