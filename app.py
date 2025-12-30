@@ -214,12 +214,6 @@ if st.session_state.page == 'review':
     # REVIEW PAGE - Show only this, nothing else
     st.markdown('<h1 class="main-title">📝 Movie Review</h1>', unsafe_allow_html=True)
     
-    col1, col2 = st.columns([1, 10])
-    with col1:
-        if st.button("⬅️ Back", key="back_btn"):
-            st.session_state.page = 'home'
-            st.rerun()
-    
     st.markdown("---")
     
     if st.session_state.selected_review_movie:
