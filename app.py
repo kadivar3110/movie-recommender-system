@@ -95,16 +95,52 @@ movie_dict = pkl.load(open(pkl_path, 'rb'))
 movies = pd.DataFrame(movie_dict)
 
 # Load Sentiment Analysis Models
+def download_model_file(filename, repo_url="https://github.com/kadivar3110/movie-recommender-system/releases/download/v1"):
+    """Download model file from GitHub release if it doesn't exist locally"""
+    file_path = os.path.join(script_dir, filename)
+    
+    if os.path.exists(file_path):
+        return file_path
+    
+    # Try to download from GitHub
+    try:
+        url = f"{repo_url}/{filename}"
+        response = requests.get(url, stream=True, timeout=30)
+        response.raise_for_status()
+        with open(file_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+        return file_path
+    except Exception as e:
+        st.error(f"Could not download {filename}: {e}")
+        return None
+
 try:
-    parent_dir = os.path.dirname(script_dir)
     # Try to load preprocessing.pkl, fallback to local function if it fails
     try:
-        preprocess_func = pkl.load(open(os.path.join(parent_dir, 'preprocessing.pkl'), 'rb'))
+        preprocess_pkl_path = download_model_file('preprocessing.pkl')
+        if preprocess_pkl_path:
+            preprocess_func = pkl.load(open(preprocess_pkl_path, 'rb'))
+        else:
+            preprocess_func = preprocess_text
     except:
         preprocess_func = preprocess_text
 
-    vectorizer = pkl.load(open(os.path.join(parent_dir, 'vectorizer.pkl'), 'rb'))
-    model = pkl.load(open(os.path.join(parent_dir, 'model.pkl'), 'rb'))
+    # Download and load vectorizer
+    vectorizer_path = download_model_file('vectorizer.pkl')
+    if vectorizer_path:
+        vectorizer = pkl.load(open(vectorizer_path, 'rb'))
+    else:
+        vectorizer = None
+
+    # Download and load model
+    model_path = download_model_file('model.pkl')
+    if model_path:
+        model = pkl.load(open(model_path, 'rb'))
+    else:
+        model = None
+        
 except Exception as e:
     st.error(f"Error loading sentiment models: {e}")
     preprocess_func = None
@@ -362,7 +398,23 @@ with col3:
 if recommend_btn:
     st.session_state.current_selected_movie = selected_movie
     with st.spinner("⏳ Finding recommendations..."):
-        similarity = pkl.load(open(os.path.join(script_dir, 'similarity.pkl'), 'rb'))
+        similarity_path = os.path.join(script_dir, 'similarity.pkl')
+        
+        # Download similarity.pkl if it doesn't exist
+        if not os.path.exists(similarity_path):
+            url = "https://github.com/kadivar3110/movie-recommender-system/releases/download/v1/similarity.pkl"
+            try:
+                with st.spinner("Downloading similarity matrix (one-time setup)..."):
+                    response = requests.get(url, stream=True)
+                    response.raise_for_status()
+                    with open(similarity_path, 'wb') as f:
+                        for chunk in response.iter_content(chunk_size=8192):
+                            f.write(chunk)
+            except Exception as e:
+                st.error(f"Error downloading similarity file: {e}")
+                st.stop()
+
+        similarity = pkl.load(open(similarity_path, 'rb'))
 
         def recommend(movie):
             movie_index = movies[movies['title'] == movie].index[0]
