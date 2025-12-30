@@ -16,7 +16,8 @@ def preprocess_text(text):
 
 # Page configuration
 st.set_page_config(
-    page_title="Movie Recommender",
+    page_title="🎬 Movie Recommender",
+    page_icon="🎬",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -43,8 +44,9 @@ st.markdown("""
         font-size: 3em;
         font-weight: bold;
         margin-bottom: 1rem;
-        color: #667eea;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
     .subtitle {
         text-align: center;
@@ -63,7 +65,6 @@ st.markdown("""
         font-size: 1.5em;
         font-weight: bold;
         margin: 20px 0 10px 0;
-        color: #667eea;
     }
     .meta-tag {
         background-color: #e9ecef;
@@ -94,54 +95,26 @@ movie_dict = pkl.load(open(pkl_path, 'rb'))
 movies = pd.DataFrame(movie_dict)
 
 # Load Sentiment Analysis Models
-def download_model_file(filename, repo_url="https://github.com/kadivar3110/movie-recommender-system/releases/download/v1"):
-    """Download model file from GitHub release if it doesn't exist locally"""
-    file_path = os.path.join(script_dir, filename)
-    
-    if os.path.exists(file_path):
-        return file_path
-    
-    # Try to download from GitHub
-    try:
-        url = f"{repo_url}/{filename}"
-        response = requests.get(url, stream=True, timeout=30)
-        response.raise_for_status()
-        with open(file_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
-        return file_path
-    except Exception as e:
-        st.error(f"Could not download {filename}: {e}")
-        return None
-
 try:
     # Try to load preprocessing.pkl, fallback to local function if it fails
     try:
-        preprocess_pkl_path = download_model_file('preprocessing.pkl')
-        if preprocess_pkl_path:
-            preprocess_func = pkl.load(open(preprocess_pkl_path, 'rb'))
-        else:
-            preprocess_func = preprocess_text
+        preprocess_func = pkl.load(open(os.path.join(script_dir, 'preprocessing.pkl'), 'rb'))
     except:
         preprocess_func = preprocess_text
 
-    # Download and load vectorizer
-    vectorizer_path = download_model_file('vectorizer.pkl')
-    if vectorizer_path:
-        vectorizer = pkl.load(open(vectorizer_path, 'rb'))
-    else:
-        vectorizer = None
-
-    # Download and load model
-    model_path = download_model_file('model.pkl')
-    if model_path:
-        model = pkl.load(open(model_path, 'rb'))
-    else:
-        model = None
-        
+    vectorizer = pkl.load(open(os.path.join(script_dir, 'vectorizer.pkl'), 'rb'))
+    model = pkl.load(open(os.path.join(script_dir, 'model.pkl'), 'rb'))
 except Exception as e:
     st.error(f"Error loading sentiment models: {e}")
+    # Debugging: Show what files are actually present in the cloud environment
+    st.write("### Debugging Information")
+    st.write(f"**Script Directory:** `{script_dir}`")
+    try:
+        files_in_dir = os.listdir(script_dir)
+        st.write(f"**Files found:** {files_in_dir}")
+    except Exception as list_err:
+        st.write(f"Could not list files: {list_err}")
+        
     preprocess_func = None
     vectorizer = None
     model = None
@@ -212,6 +185,12 @@ def get_movie_reviews(movie_id):
 if st.session_state.page == 'review':
     # REVIEW PAGE - Show only this, nothing else
     st.markdown('<h1 class="main-title">📝 Movie Review</h1>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([1, 10])
+    with col1:
+        if st.button("⬅️ Back", key="back_btn"):
+            st.session_state.page = 'home'
+            st.rerun()
     
     st.markdown("---")
     
@@ -351,14 +330,6 @@ if st.session_state.page == 'review':
                     
             else:
                 st.info("No reviews found for this movie.")
-            
-            # Back button at the end of review page
-            st.markdown("---")
-            col1, col2, col3 = st.columns([1, 1, 1])
-            with col2:
-                if st.button("⬅️ Back to Home", use_container_width=True, key="back_btn_end"):
-                    st.session_state.page = 'home'
-                    st.rerun()
 
         except Exception as e:
             st.error(f"Error loading movie details: {e}")
