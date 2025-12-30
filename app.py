@@ -43,9 +43,8 @@ st.markdown("""
         font-size: 3em;
         font-weight: bold;
         margin-bottom: 1rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #667eea;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
     }
     .subtitle {
         text-align: center;
@@ -64,6 +63,7 @@ st.markdown("""
         font-size: 1.5em;
         font-weight: bold;
         margin: 20px 0 10px 0;
+        color: #667eea;
     }
     .meta-tag {
         background-color: #e9ecef;
